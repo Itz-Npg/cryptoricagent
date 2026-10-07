@@ -1,0 +1,50 @@
+# Publish the documentation site to GitHub Pages.
+#
+# The site is two files with no build step, so this workflow has no `npm ci`, no
+# cache and no build job — it uploads the directory and hands it to Pages. A docs
+# site that needed a toolchain to publish would be a docs site nobody updates.
+#
+# `enablement: true` lets the first run turn Pages on for a repository that has
+# never had it, so no settings change is required. If that first run is refused,
+# the fallback needs no workflow at all: Settings → Pages → Source → "Deploy from
+# a branch" → `main` / `/ (root)`, which serves the same files.
+
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    name: Publish the site
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
